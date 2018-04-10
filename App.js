@@ -29,8 +29,7 @@ export default class App extends Component<{}> {
   constructor(props) {
     super(props);
     this.state = { 
-      v1: 0,
-      v2: 0
+      
     };
   }
 
@@ -39,12 +38,12 @@ export default class App extends Component<{}> {
       <View style={styles.container}>    
         <TouchableOpacity onPress={() => {
             try {
-                Aip.actionPlus(this.state.v1, this.state.v2, (err, result) => {
+                Aip.actionPlus((err, result) => {
                     if (err) {
-                      Alert.alert("error", "计算失败了");
+                      Alert.alert("error", "识别失败了");
                       return;
                     } else {
-                      Alert.alert("计算成功", result);
+                      Alert.alert("识别成功", result);
                     }
                 });
             } catch(e) {
@@ -53,7 +52,7 @@ export default class App extends Component<{}> {
                 Alert.alert("error", "result error");
             }
         }}>
-        <Text>打开Activity 计算和</Text>
+        <Text>识别银行卡号</Text>
         </TouchableOpacity>
         
       </View>

@@ -1,5 +1,10 @@
 package com.testapp;
 
+import com.baidu.ocr.sdk.OCR;
+import com.baidu.ocr.sdk.OnResultListener;
+import com.baidu.ocr.sdk.exception.OCRError;
+import com.baidu.ocr.sdk.model.AccessToken;
+import com.baidu.ocr.ui.camera.CameraActivity;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 
 import android.app.Activity;
@@ -43,6 +48,7 @@ import java.util.HashMap;
  */
 
 public class AipModule extends ReactContextBaseJavaModule {
+    private static final int REQUEST_CODE_BANKCARD = 111;
 
     private Callback mCallback; // 保存回调
 
@@ -56,47 +62,84 @@ public class AipModule extends ReactContextBaseJavaModule {
     public AipModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+        reactContext.addActivityEventListener(mActivityEventListener);
     }
 
     @ReactMethod
-    public void actionPlus(int a, int b, Callback callback) {
-
+    public void actionPlus(Callback callback) {
         this.mCallback = callback;
-        openActivity();
+        initAccessToken();
 
+        Activity currentActivity = getCurrentActivity();
+
+        Intent intent = new Intent(currentActivity.getApplicationContext(), CameraActivity.class);
+        intent.putExtra(CameraActivity.KEY_OUTPUT_FILE_PATH,
+                FileUtil.getSaveFile(currentActivity.getApplication()).getAbsolutePath());
+        intent.putExtra(CameraActivity.KEY_CONTENT_TYPE,
+                CameraActivity.CONTENT_TYPE_BANK_CARD);
+        currentActivity.startActivityForResult(intent, REQUEST_CODE_BANKCARD);
     }
 
-    @ReactMethod
-    public void actionMult(int a, int b, Callback callback) {
+    /*初始化AccessToken*/
+    private void initAccessToken() {
+        Activity currentActivity = getCurrentActivity();
 
-        this.mCallback = callback;
-        openActivity();
+        OCR.getInstance().initAccessToken(new OnResultListener<AccessToken>() {
+            @Override
+            public void onResult(AccessToken accessToken) {
+                String token = accessToken.getAccessToken();
+                Log.v("has token:", "success");
+            }
 
+            @Override
+            public void onError(OCRError error) {
+                Log.v("has not token:", "failure" + error.getMessage());
+                error.printStackTrace();
+                invokeError("licence方式获取token失败" + error.getMessage());
+            }
+        }, currentActivity.getApplicationContext());
     }
 
-    @ReactMethod
-    public void actionSub(int a, int b, Callback callback) {
-
-        this.mCallback = callback;
-        openActivity();
-
-    }
-
-    private void openActivity() {
-
-        try {
-            Log.v("打开NewActivity:", "begin");
-            Activity currentActivity = getCurrentActivity();
-            Intent intent = new Intent(currentActivity, NewActivity.class);
-            currentActivity.startActivity(intent);
-        } catch (Exception e){
-            Log.v("无法打开NewActivity页面:", e.getMessage());
+    private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
+        @Override
+        public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+            // 识别成功回调，银行卡识别
+            if (requestCode == REQUEST_CODE_BANKCARD && resultCode == Activity.RESULT_OK) {
+                RecognizeService.recBankCard(FileUtil.getSaveFile(activity.getApplicationContext()).getAbsolutePath(),
+                        new RecognizeService.ServiceListener() {
+                            @Override
+                            public void onResult(String result) {
+                                Log.v("=============", "###############");
+                                Log.v("result:", result);
+                                Log.v("=============", "###############");
+                                invokeSuccessWithResult(result);
+                            }
+                        });
+            }
         }
+    };
 
-        //我想调用ActionPlus把结果放到result，然后关闭NewActivity
+    /**
+     * 识别成功时触发
+     *
+     */
+    private void invokeSuccessWithResult(String result) {
+        if (this.mCallback != null) {
+            Log.v("success:", result);
+            this.mCallback.invoke(null, result);
+            this.mCallback = null;
+        }
+    }
 
-        this.mCallback.invoke(null, "result");
-
+    /**
+     * 失败时触发
+     */
+    private void invokeError(String result) {
+        if (this.mCallback != null) {
+            Log.v("error:", result);
+            this.mCallback.invoke(result, null);
+            this.mCallback = null;
+        }
     }
 
 }
