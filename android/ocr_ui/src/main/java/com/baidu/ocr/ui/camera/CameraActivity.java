@@ -42,8 +42,6 @@ public class CameraActivity extends Activity {
 
     public static final String CONTENT_TYPE_GENERAL = "general";
     public static final String CONTENT_TYPE_ID_CARD_FRONT = "IDCardFront";
-    public static final String CONTENT_TYPE_ID_CARD_BACK = "IDCardBack";
-    public static final String CONTENT_TYPE_BANK_CARD = "bankCard";
 
     private static final int REQUEST_CODE_PICK_IMAGE = 100;
     private static final int PERMISSIONS_REQUEST_CAMERA = 800;
@@ -145,17 +143,6 @@ public class CameraActivity extends Activity {
                 if (isNativeEnable) {
                     takePhotoBtn.setVisibility(View.INVISIBLE);
                 }
-                break;
-            case CONTENT_TYPE_ID_CARD_BACK:
-                maskType = MaskView.MASK_TYPE_ID_CARD_BACK;
-                overlayView.setVisibility(View.INVISIBLE);
-                if (isNativeEnable) {
-                    takePhotoBtn.setVisibility(View.INVISIBLE);
-                }
-                break;
-            case CONTENT_TYPE_BANK_CARD:
-                maskType = MaskView.MASK_TYPE_BANK_CARD;
-                overlayView.setVisibility(View.INVISIBLE);
                 break;
             case CONTENT_TYPE_GENERAL:
             default:
